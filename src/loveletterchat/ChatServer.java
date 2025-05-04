@@ -7,15 +7,16 @@ import java.net.*;
 import java.util.*;
 
     public class ChatServer {
-        private static final int PORT = 12345;
-        private static final Map<String, Socket> clients = new HashMap<>();
+        private static final int PORT = 12345; //important: Port gleich wie Client
+        private static final Map<String, Socket> clients = new HashMap<>(); //Das ist eine Liste von Namen, die sich schon eingeloggt haben – damit kein Name doppelt vorkommt- alle offenen Verbindungen werden hier gemerkt, um später Nachrichten an alle gleichzeitig zu schicken
 
         public static void main(String[] args) {
-            System.out.println("loveletterchat.ChatServer läuft auf Port " + PORT);
+            System.out.println("loveletterchat.ChatServer läuft auf Port " + PORT); // Das schreibt einfach in der Konsole: Der Server ist aktiv
             try (ServerSocket serverSocket = new ServerSocket(PORT)) {
                 while (true) {
                     Socket clientSocket = serverSocket.accept();
                     new Thread(() -> handleClient(clientSocket)).start();
+                  /*   ein neuer Thread wird gestartet, damit jeder Spieler unabhängig mitspielen kann */
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -26,7 +27,7 @@ import java.util.*;
             return clients.containsKey(name);
         }
 
-        private static void handleClient(Socket socket) {
+        private static void handleClient(Socket socket) { //Hier kommt ein einzelner Client (Spieler) rein. Jetzt wird alles geregelt, was mit ihm zu tun hat
             String nickname = null;
             try (
                     BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -35,7 +36,8 @@ import java.util.*;
                 out.println("Enter your nickname: ");
                 nickname = in.readLine().trim();
 
-                synchronized (clients) {
+                synchronized (clients) { //synchronized ist wichtig, weil mehrere Spieler gleichzeitig verbinden können – das verhindert Chaos
+
                     if (nicknameExists(nickname)) {
                         out.println("Nickname already taken. Connection closing.");
                         socket.close();
@@ -69,7 +71,7 @@ import java.util.*;
             }
         }
 
-        private static void broadcast(String message, String excludeNickname) {
+        private static void broadcast(String message, String excludeNickname) { ///Diese Methode wird verwendet, um eine Nachricht an alle Clients zu senden – außer dem, der z. B. gerade gejoint ist
             synchronized (clients) {
                 for (Map.Entry<String, Socket> entry : clients.entrySet()) {
                     if (entry.getKey().equals(excludeNickname)) continue;
